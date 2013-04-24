@@ -17,50 +17,42 @@
 package com.cyanogenmod.settings.device;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Bundle;
+import android.util.AttributeSet;
 import android.preference.CheckBoxPreference;
-import android.preference.ListPreference;
 import android.preference.Preference;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceFragment;
+import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceManager;
-import android.preference.PreferenceScreen;
-import android.util.Log;
 
-import com.cyanogenmod.settings.device.R;
+public class SPenPowerSavingMode extends CheckBoxPreference implements OnPreferenceChangeListener {
 
-public class HapticFragmentActivity extends PreferenceFragment {
+    private static final String FILE = "/sys/class/sec/sec_epen/epen_saving_mode";
 
-    private static final String PREF_ENABLED = "1";
-    private static final String TAG = "GalaxyS3Settings_Haptic";
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        addPreferencesFromResource(R.xml.haptic_preferences);
-
-        PreferenceScreen prefSet = getPreferenceScreen();
-
+    public SPenPowerSavingMode(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        this.setOnPreferenceChangeListener(this);
     }
 
-    @Override
-    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
-
-        String boxValue;
-        String key = preference.getKey();
-
-        Log.w(TAG, "key: " + key);
-
-        return true;
-    }
-
-    public static boolean isSupported(String FILE) {
+    public static boolean isSupported() {
         return Utils.fileExists(FILE);
     }
 
+    /**
+     * Restore s-pen setting from SharedPreferences. (Write to kernel.)
+     * @param context       The context to read the SharedPreferences from
+     */
     public static void restore(Context context) {
+        if (!isSupported()) {
+            return;
+        }
+
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+        Utils.writeValue(FILE, sharedPrefs.getBoolean(DeviceSettings.KEY_SPEN_POWER_SAVING_MODE, false) ? "1" : "0");
+    }
+
+    public boolean onPreferenceChange(Preference preference, Object newValue) {
+        Utils.writeValue(FILE, ((Boolean) newValue) ? "1" : "0");
+        return true;
     }
 }
